@@ -1,0 +1,53 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <EditTextPreference
+        android:key="idx1"
+        android:title="@string/pref_title_idx1"
+        android:defaultValue="@string/pref_default_idx1"
+        android:selectAllOnFocus="true"
+        android:inputType="textCapWords"
+        android:capitalize="words"
+        android:singleLine="true"
+        android:maxLines="1" />
+
+    <EditTextPreference
+        android:key="idx2"
+        android:title="@string/pref_title_idx2"
+        android:defaultValue="@string/pref_default_idx2"
+        android:selectAllOnFocus="true"
+        android:inputType="textCapWords"
+        android:capitalize="words"
+        android:singleLine="true"
+        android:maxLines="1" />
+
+    <EditTextPreference
+        android:key="idx3"
+        android:title="@string/pref_title_idx3"
+        android:defaultValue="@string/pref_default_idx3"
+        android:selectAllOnFocus="true"
+        android:inputType="textCapWords"
+        android:capitalize="words"
+        android:singleLine="true"
+        android:maxLines="1" />
+
+    <EditTextPreference
+        android:key="idx4"
+        android:title="@string/pref_title_idx4"
+        android:defaultValue="@string/pref_default_idx4"
+        android:selectAllOnFocus="true"
+        android:inputType="textCapWords"
+        android:capitalize="words"
+        android:singleLine="true"
+        android:maxLines="1" />
+
+    <EditTextPreference
+        android:key="idx5"
+        android:title="@string/pref_title_idx5"
+        android:defaultValue="@string/pref_default_idx5"
+        android:selectAllOnFocus="true"
+        android:inputType="textCapWords"
+        android:capitalize="words"
+        android:singleLine="true"
+        android:maxLines="1" />
+
+</PreferenceScreen>

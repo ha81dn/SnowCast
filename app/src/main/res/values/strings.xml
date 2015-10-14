@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">SnowCast</string>
+    <string name="pref_header_data_sync">Datenquellen</string>
+    <string name="pref_title_idx1">Ortsindex 1</string>
+    <string name="pref_title_idx2">Ortsindex 2</string>
+    <string name="pref_title_idx3">Ortsindex 3</string>
+    <string name="pref_title_idx4">Ortsindex 4</string>
+    <string name="pref_title_idx5">Ortsindex 5</string>
+    <string name="pref_default_idx1">2860684-oberforstbach</string>
+    <string name="pref_default_idx2">2934486-dueren</string>
+    <string name="pref_default_idx3">2949235-biebrich</string>
+    <string name="pref_default_idx4">2959771-abtsdorf</string>
+    <string name="pref_default_idx5"/>
+</resources>
