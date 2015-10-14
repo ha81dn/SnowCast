@@ -6,9 +6,15 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.RemoteViews;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Random;
 
 public class WidgetReceiver extends AppWidgetProvider {
@@ -66,5 +72,44 @@ public class WidgetReceiver extends AppWidgetProvider {
             appWidgetManager.updateAppWidget(widgetId, remoteViews);
         }
     }
+
+    public String httpGet(String urlString) {
+
+        StringBuffer chaine = new StringBuffer("");
+        try {
+            URL url = new URL(urlString);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setDoInput(true);
+            connection.connect();
+
+            InputStream inputStream = connection.getInputStream();
+
+            BufferedReader rd = new BufferedReader(new InputStreamReader(inputStream));
+            String line;
+            while ((line = rd.readLine()) != null) {
+                chaine.append(line);
+            }
+
+        } catch (Exception ignore) {
+        }
+
+        return chaine.toString();
+    }
+
+
+    private class HttpAsyncTask extends AsyncTask<String, Void, String> {
+        @Override
+        protected String doInBackground(String... urls) {
+
+            return httpGet(urls[0]);
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            // Zuweisung an Widget
+        }
+    }
+
 
 }

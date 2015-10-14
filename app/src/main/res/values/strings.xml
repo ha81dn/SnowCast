@@ -10,5 +10,5 @@
     <string name="pref_default_idx2">2934486-dueren</string>
     <string name="pref_default_idx3">2949235-biebrich</string>
     <string name="pref_default_idx4">2959771-abtsdorf</string>
-    <string name="pref_default_idx5"/>
+    <string name="pref_default_idx5" />
 </resources>
