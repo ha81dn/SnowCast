@@ -129,61 +129,90 @@ public class WidgetReceiver extends AppWidgetProvider {
             String time, day, sky, city = "", temp, precip, windname, winddir, wMid, wMax;
             int snowPos, pos, len = result.length();
 
-            // result = "" ?
+            if (!result.equals("")) {
+                snowPos = result.indexOf("chnee");
+                if (snowPos >= 0)
+                    city = getInnerText(result, 0, "<title>Wettervorhersage Light für ", " |", false);
+                while (snowPos >= 0) {
+                    try {
+                        do {
+                            sky = getInnerText(result, snowPos, "<p>", "</p>", true);
+                            pos = nextOccPos(result, snowPos, "<h4>", true);
+                            if (pos == -1) break;
+                            time = getInnerText(result, pos, ">", ":", false);
+                            pos = nextOccPos(result, pos, "\">Temperatur<", false);
+                            if (pos == len) break;
+                            pos = nextOccPos(result, pos + 10, "\">", false);
+                            if (pos == len) break;
+                            temp = getInnerText(result, pos, ">", "<", false).replace(".", ",");
+                            pos = nextOccPos(result, pos, "\">Niederschlag<", false);
+                            if (pos == len) break;
+                            pos = nextOccPos(result, pos + 10, "\">", false);
+                            if (pos == len) break;
+                            precip = getInnerText(result, pos, ">", "<", false).replace(".", ",");
+                            pos = nextOccPos(result, pos, " Bft", false);
+                            wMax = getInnerText(result, pos, "/ ", " B", true);
+                            pos = nextOccPos(result, pos + 10, " Bft", false);
+                            wMid = getInnerText(result, pos, "/ ", " B", true);
+                            pos = nextOccPos(result, pos, "wi-from-", false);
+                            if (pos == len) break;
+                            winddir = getInnerText(result, pos, "-", " wind-daytable", false);
+                            pos = nextOccPos(result, snowPos, "\"day_", true);
+                            if (pos == -1) break;
+                            time = getInnerText(result, pos, "_", "\"", false) + time;
+                            if (time.length() != 8) break;
+                            pos = nextOccPos(result, pos, ",", false);
+                            if (pos == len) break;
+                            day = getInnerText(result, pos, " ", ",", true);
+                            windname = translateBft(context, Integer.parseInt(wMid), Integer.parseInt(wMax));
+                            winddir = translateWDir(context, winddir);
+                            DatabaseHandler.store(db, location, time, sky, city, day, temp, precip, windname, winddir);
+                        } while (false);
+                    } catch (Exception ignore) {
+                    }
 
-            snowPos = result.indexOf("chnee");
-            if (snowPos >= 0)
-                city = getInnerText(result, 0, "<title>Wettervorhersage Light für ", " |", false);
-            while (snowPos >= 0) {
-                try {
-                    do {
-                        sky = getInnerText(result, snowPos, "<p>", "</p>", true);
-                        pos = nextOccPos(result, snowPos, "<h4>", true);
-                        if (pos == -1) break;
-                        time = getInnerText(result, pos, ">", ":", false);
-                        pos = nextOccPos(result, pos, "\">Temperatur<", false);
-                        if (pos == len) break;
-                        pos = nextOccPos(result, pos + 10, "\">", false);
-                        if (pos == len) break;
-                        temp = getInnerText(result, pos, ">", "<", false).replace(".", ",");
-                        pos = nextOccPos(result, pos, "\">Niederschlag<", false);
-                        if (pos == len) break;
-                        pos = nextOccPos(result, pos + 10, "\">", false);
-                        if (pos == len) break;
-                        precip = getInnerText(result, pos, ">", "<", false).replace(".", ",");
-                        pos = nextOccPos(result, pos, " Bft", false);
-                        wMax = getInnerText(result, pos, "/ ", " B", true);
-                        pos = nextOccPos(result, pos + 10, " Bft", false);
-                        wMid = getInnerText(result, pos, "/ ", " B", true);
-                        pos = nextOccPos(result, pos, "wi-from-", false);
-                        if (pos == len) break;
-                        winddir = getInnerText(result, pos, "-", " wind-daytable", false);
-                        pos = nextOccPos(result, snowPos, "\"day_", true);
-                        if (pos == -1) break;
-                        time = getInnerText(result, pos, "_", "\"", false) + time;
-                        if (time.length() != 8) break;
-                        pos = nextOccPos(result, pos, ",", false);
-                        if (pos == len) break;
-                        day = getInnerText(result, pos, " ", ",", true);
-                        windname = translateBft(context, Integer.parseInt(wMid), Integer.parseInt(wMax));
-                        winddir = translateWDir(context, winddir);
-                        DatabaseHandler.store(db, location, time, sky, city, day, temp, precip, windname, winddir);
-                    } while (false);
-                } catch (Exception ignore) {
+                    snowPos = result.indexOf("chnee", snowPos + 5);
                 }
 
-                snowPos = result.indexOf("chnee", snowPos + 5);
+                db.close();
             }
 
-            db.close();
+            if (index.equals("idx5")) {
+                showForecast(context, appWidgetManager, appWidgetManager.getAppWidgetIds(new ComponentName(context, WidgetReceiver.class)));
+            } else {
+                AsyncTask<String, Void, String> getter = new HttpAsyncTask();
+                ((HttpAsyncTask) getter).context = context;
+                ((HttpAsyncTask) getter).appWidgetManager = appWidgetManager;
+                ((HttpAsyncTask) getter).index = "idx" + Integer.toString(Integer.parseInt(index.substring(3, 4)) + 1);
+                RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.xml.widget_layout);
+                remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_1));
 
-            // Zuweisung an Widget
+                ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
+                int[] allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
+                for (int widgetId : allWidgetIds) {
+                    appWidgetManager.updateAppWidget(widgetId, remoteViews);
+                }
+                getter.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "http://kachelmannwetter.com/de/vorhersage/#idx/lighttrend");
+            }
+
+
+            // Demo-Code
             RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.xml.widget_layout);
             remoteViews.setTextViewText(R.id.update, getNonbreakingText(result.substring(0, 500)));
 
             ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
             int[] allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
             for (int widgetId : allWidgetIds) {
+                appWidgetManager.updateAppWidget(widgetId, remoteViews);
+            }
+        }
+
+        private void showForecast(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+            RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.xml.widget_layout);
+            // Zuweiserei: erst in Variable holen, einmal setTextViewText und dann alle durchrasseln
+
+            for (int widgetId : appWidgetIds) {
+                remoteViews.setTextViewText(R.id.update, "");
                 appWidgetManager.updateAppWidget(widgetId, remoteViews);
             }
         }

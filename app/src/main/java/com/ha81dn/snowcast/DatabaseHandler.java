@@ -5,6 +5,9 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
+import android.text.style.ForegroundColorSpan;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -83,16 +86,54 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    public String retrieve(SQLiteDatabase db, String location) {
+    public Spannable retrieve(SQLiteDatabase db, String location) {
         Cursor c;
-        String msg = "";
+        SpannableStringBuilder list = new SpannableStringBuilder();
+        int start;
 
-        c = db.rawQuery("select sky || ' in ' || city || ' am ' || day || ' ab ' || ltrim(substr(time, 7, 2), '0') || ' Uhr mit ' || precip || ' bei ' || temp || ' und ' || windname || ' aus ' || winddir where location = ? order by time", new String[]{location});
+        //sky || ' in ' || city || ' am ' || day || ' ab ' || ltrim(substr(time, 7, 2), '0') || ' Uhr mit ' || precip || ' bei ' || temp || ' und ' || windname || ' aus ' || winddir
+
+        c = db.rawQuery("select sky, city, day, ltrim(substr(time, 7, 2), '0'), precip, temp, windname, winddir where location = ? order by time", new String[]{location});
         if (c != null) {
-            if (c.moveToFirst()) msg += c.getString(0) + "\n";
+            if (c.moveToFirst()) {
+                do {
+                    if (list.length() != 0) list.append("\n");
+                    start = list.length();
+                    list.append(c.getString(0));
+                    list.setSpan(new ForegroundColorSpan(0xFFFF0000), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    list.append(" in ");
+                    start = list.length();
+                    list.append(c.getString(1));
+                    list.setSpan(new ForegroundColorSpan(0xFFFF0000), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    list.append(" am ");
+                    start = list.length();
+                    list.append(c.getString(2));
+                    list.setSpan(new ForegroundColorSpan(0xFFFF0000), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    list.append(" ab ");
+                    start = list.length();
+                    list.append(c.getString(3));
+                    list.setSpan(new ForegroundColorSpan(0xFFFF0000), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    list.append(" Uhr mit ");
+                    start = list.length();
+                    list.append(c.getString(4));
+                    list.setSpan(new ForegroundColorSpan(0xFFFF0000), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    list.append(" bei ");
+                    start = list.length();
+                    list.append(c.getString(5));
+                    list.setSpan(new ForegroundColorSpan(0xFFFF0000), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    list.append(" und ");
+                    start = list.length();
+                    list.append(c.getString(6));
+                    list.setSpan(new ForegroundColorSpan(0xFFFF0000), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    list.append(" aus ");
+                    start = list.length();
+                    list.append(c.getString(7));
+                    list.setSpan(new ForegroundColorSpan(0xFFFF0000), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                } while (c.moveToNext());
+            }
             c.close();
         }
 
-        return msg;
+        return list;
     }
 }
