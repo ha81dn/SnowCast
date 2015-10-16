@@ -45,6 +45,6 @@
     <string name="wdir_nw">Richtung Nordwest</string>
     <string name="wdir_nnw">Richtung Nord-Nordwest</string>
     <string name="forecast_title">"+++ SnowCast-Liveticker%1$s +++\n"</string>
-    <string name="last_update">" (Stand: %1$s Uhr)"</string>
+    <string name="last_update">" (%1$s Uhr)"</string>
     <string name="no_data_available">Keine Wetterdaten über zu erwartenden Schneefall verfügbar.</string>
 </resources>

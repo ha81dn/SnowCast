@@ -18,7 +18,6 @@ import android.text.style.AlignmentSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.UnderlineSpan;
-import android.util.Log;
 import android.widget.RemoteViews;
 
 import java.io.BufferedReader;
@@ -46,7 +45,6 @@ public class WidgetReceiver extends AppWidgetProvider {
         super.onReceive(context, intent);
         if (intent.getAction().equals("com.ha81dn.snowcast.UPDATE")) {
             AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
-            Log.w("onReceive", intent.getAction());
 
             AsyncTask<String, Void, Void> getter = new HttpAsyncTask();
             ((HttpAsyncTask) getter).context = context;
