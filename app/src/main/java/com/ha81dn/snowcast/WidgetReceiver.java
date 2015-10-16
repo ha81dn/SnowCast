@@ -10,6 +10,14 @@ import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
+import android.text.Layout;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.AlignmentSpan;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
+import android.text.style.UnderlineSpan;
 import android.util.Log;
 import android.widget.RemoteViews;
 
@@ -18,6 +26,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
 
 public class WidgetReceiver extends AppWidgetProvider {
     @Override
@@ -37,11 +48,11 @@ public class WidgetReceiver extends AppWidgetProvider {
             AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
             Log.w("onReceive", intent.getAction());
 
-            AsyncTask<String, Void, String> getter = new HttpAsyncTask();
+            AsyncTask<String, Void, Void> getter = new HttpAsyncTask();
             ((HttpAsyncTask) getter).context = context;
             ((HttpAsyncTask) getter).appWidgetManager = appWidgetManager;
             ((HttpAsyncTask) getter).index = "idx1";
-            RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.xml.widget_layout);
+            RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
             remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_1));
 
             ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
@@ -55,10 +66,11 @@ public class WidgetReceiver extends AppWidgetProvider {
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        super.onUpdate(context, appWidgetManager, appWidgetIds);
         ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
         int[] allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
         for (int widgetId : allWidgetIds) {
-            RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.xml.widget_layout);
+            RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
             Intent intent = new Intent(context, WidgetReceiver.class);
             intent.setAction("com.ha81dn.snowcast.UPDATE");
             intent.addCategory(Intent.CATEGORY_DEFAULT);
@@ -66,21 +78,115 @@ public class WidgetReceiver extends AppWidgetProvider {
             remoteViews.setOnClickPendingIntent(R.id.update, pendingIntent);
             appWidgetManager.updateAppWidget(widgetId, remoteViews);
         }
+        showForecast(context, appWidgetManager, appWidgetManager.getAppWidgetIds(new ComponentName(context, WidgetReceiver.class)));
     }
 
-    private class HttpAsyncTask extends AsyncTask<String, Void, String> {
+    private void showForecast(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        SQLiteDatabase db = DatabaseHandler.getInstance(context).getWritableDatabase();
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+        RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+        SpannableStringBuilder list = DatabaseHandler.retrieve(db);
+        String tmp = sharedPref.getString("last_update", "");
+        tmp = context.getString(R.string.forecast_title, tmp.equals("") ? "" : context.getString(R.string.last_update, tmp));
+        if (list.length() == 0)
+            list.append(context.getString(R.string.no_data_available));
+        else
+            list.setSpan(new AlignmentSpan.Standard(Layout.Alignment.ALIGN_NORMAL), 0, list.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        list.insert(0, tmp);
+        list.setSpan(new UnderlineSpan(), 0, tmp.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        list.setSpan(new ForegroundColorSpan(0xFFFFFFFF), 0, tmp.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        list.setSpan(new RelativeSizeSpan(0.9f), 0, tmp.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        remoteViews.setTextViewText(R.id.update, list);
+        for (int widgetId : appWidgetIds) appWidgetManager.updateAppWidget(widgetId, remoteViews);
+    }
+
+    private String translateWDir(Context context, String wDir) {
+        return context.getResources().getString(context.getResources().getIdentifier("wdir_" + wDir, "string", context.getPackageName()));
+    }
+
+    private String translateBft(Context context, int bftMid, int bftMax) {
+        if (bftMax < 0 || bftMax > 12) bftMax = bftMid;
+        if (bftMid < 0 || bftMid > 12) bftMid = bftMax;
+        if (bftMid < 0 || bftMid > 12)
+            return context.getString(R.string.bft_unknown);
+        else {
+            if (bftMid == bftMax)
+                return context.getResources().getString(context.getResources().getIdentifier("bft_" + Integer.toString(bftMid), "string", context.getPackageName()));
+            else
+                return context.getString(R.string.bft_range, context.getResources().getString(context.getResources().getIdentifier("bft_" + Integer.toString(bftMid), "string", context.getPackageName())), context.getResources().getString(context.getResources().getIdentifier("bft_" + Integer.toString(bftMax), "string", context.getPackageName())));
+        }
+    }
+
+    private int nextOccPos(String page, int pos, String stopper, boolean rtl) {
+        int nextPos, lenS;
+        char firstS;
+        lenS = stopper.length();
+        firstS = stopper.charAt(0);
+        if (rtl) {
+            for (nextPos = pos; nextPos >= 0; nextPos--) {
+                if (page.charAt(nextPos) == firstS) {
+                    if (page.substring(nextPos, nextPos + lenS).equals(stopper)) break;
+                }
+            }
+        } else {
+            for (nextPos = pos; nextPos < page.length(); nextPos++) {
+                if (page.charAt(nextPos) == firstS) {
+                    if (page.substring(nextPos, nextPos + lenS).equals(stopper)) break;
+                }
+            }
+        }
+        return nextPos;
+    }
+
+    private String getInnerText(String page, int pos, String leftStopper, String rightStopper, boolean rtl) {
+        int leftPos, rightPos, lenLS, lenRS;
+        char firstL, firstR;
+        lenLS = leftStopper.length();
+        lenRS = rightStopper.length();
+        firstL = leftStopper.charAt(0);
+        firstR = rightStopper.charAt(0);
+        if (rtl) {
+            for (leftPos = pos; leftPos >= 0; leftPos--) {
+                if (page.charAt(leftPos) == firstL) {
+                    if (page.substring(leftPos, leftPos + lenLS).equals(leftStopper)) break;
+                }
+            }
+            if (leftPos == -1) return "";
+            for (rightPos = leftPos; rightPos < page.length(); rightPos++) {
+                if (page.charAt(rightPos) == firstR) {
+                    if (page.substring(rightPos, rightPos + lenRS).equals(rightStopper)) break;
+                }
+            }
+            if (rightPos == page.length()) return "";
+        } else {
+            for (rightPos = pos; rightPos < page.length(); rightPos++) {
+                if (page.charAt(rightPos) == firstR) {
+                    if (page.substring(rightPos, rightPos + lenRS).equals(rightStopper)) break;
+                }
+            }
+            if (rightPos == page.length()) return "";
+            for (leftPos = rightPos; leftPos >= 0; leftPos--) {
+                if (page.charAt(leftPos) == firstL) {
+                    if (page.substring(leftPos, leftPos + lenLS).equals(leftStopper)) break;
+                }
+            }
+            if (leftPos == -1) return "";
+        }
+        return page.substring(leftPos + lenLS, rightPos);
+    }
+
+    private class HttpAsyncTask extends AsyncTask<String, Void, Void> {
         public AppWidgetManager appWidgetManager;
         public Context context;
-        public String location;
         public String index;
         boolean flag = false;
 
         @Override
-        protected String doInBackground(String... urls) {
+        protected Void doInBackground(String... urls) {
             SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
             StringBuilder chaine = new StringBuilder("");
             String location = sharedPref.getString(index, "").trim();
-            if (location.equals("")) return "";
+            if (location.equals("")) return null;
 
             try {
                 URL url = new URL(urls[0].replace("#idx", location));
@@ -102,34 +208,12 @@ public class WidgetReceiver extends AppWidgetProvider {
                 }
             } catch (Exception ignore) {
             }
-            return chaine.toString();
-        }
 
-        @Override
-        protected void onProgressUpdate(Void... voids) {
-            RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.xml.widget_layout);
-            if (flag) {
-                remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_1));
-                flag = false;
-            } else {
-                remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_0));
-                flag = true;
-            }
-
-            ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
-            int[] allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
-            for (int widgetId : allWidgetIds) {
-                appWidgetManager.updateAppWidget(widgetId, remoteViews);
-            }
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            SQLiteDatabase db = DatabaseHandler.getInstance(context).getWritableDatabase();
-            String time, day, sky, city = "", temp, precip, windname, winddir, wMid, wMax;
+            String result = chaine.toString(), time, day, sky, city = "", temp, precip, windname, winddir, wMid, wMax;
             int snowPos, pos, len = result.length();
 
             if (!result.equals("")) {
+                SQLiteDatabase db = DatabaseHandler.getInstance(context).getWritableDatabase();
                 snowPos = result.indexOf("chnee");
                 if (snowPos >= 0)
                     city = getInnerText(result, 0, "<title>Wettervorhersage Light für ", " |", false);
@@ -159,7 +243,7 @@ public class WidgetReceiver extends AppWidgetProvider {
                             winddir = getInnerText(result, pos, "-", " wind-daytable", false);
                             pos = nextOccPos(result, snowPos, "\"day_", true);
                             if (pos == -1) break;
-                            time = getInnerText(result, pos, "_", "\"", false) + time;
+                            time = getInnerText(result, pos, "_", "\">", false) + time;
                             if (time.length() != 8) break;
                             pos = nextOccPos(result, pos, ",", false);
                             if (pos == len) break;
@@ -167,24 +251,49 @@ public class WidgetReceiver extends AppWidgetProvider {
                             windname = translateBft(context, Integer.parseInt(wMid), Integer.parseInt(wMax));
                             winddir = translateWDir(context, winddir);
                             DatabaseHandler.store(db, location, time, sky, city, day, temp, precip, windname, winddir);
+                            SharedPreferences.Editor edit = sharedPref.edit();
+                            SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault());
+                            Calendar now = Calendar.getInstance();
+                            edit.putString("last_update", sdf.format(now.getTime()));
+                            edit.apply();
                         } while (false);
                     } catch (Exception ignore) {
                     }
-
                     snowPos = result.indexOf("chnee", snowPos + 5);
                 }
-
                 db.close();
             }
+            return null;
+        }
 
+        @Override
+        protected void onProgressUpdate(Void... voids) {
+            RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+            if (flag) {
+                remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_1));
+                flag = false;
+            } else {
+                remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_0));
+                flag = true;
+            }
+
+            ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
+            int[] allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
+            for (int widgetId : allWidgetIds) {
+                appWidgetManager.updateAppWidget(widgetId, remoteViews);
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
             if (index.equals("idx5")) {
                 showForecast(context, appWidgetManager, appWidgetManager.getAppWidgetIds(new ComponentName(context, WidgetReceiver.class)));
             } else {
-                AsyncTask<String, Void, String> getter = new HttpAsyncTask();
+                AsyncTask<String, Void, Void> getter = new HttpAsyncTask();
                 ((HttpAsyncTask) getter).context = context;
                 ((HttpAsyncTask) getter).appWidgetManager = appWidgetManager;
                 ((HttpAsyncTask) getter).index = "idx" + Integer.toString(Integer.parseInt(index.substring(3, 4)) + 1);
-                RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.xml.widget_layout);
+                RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
                 remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_1));
 
                 ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
@@ -194,112 +303,6 @@ public class WidgetReceiver extends AppWidgetProvider {
                 }
                 getter.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "http://kachelmannwetter.com/de/vorhersage/#idx/lighttrend");
             }
-
-
-            // Demo-Code
-            RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.xml.widget_layout);
-            remoteViews.setTextViewText(R.id.update, getNonbreakingText(result.substring(0, 500)));
-
-            ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
-            int[] allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
-            for (int widgetId : allWidgetIds) {
-                appWidgetManager.updateAppWidget(widgetId, remoteViews);
-            }
         }
-
-        private void showForecast(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-            RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.xml.widget_layout);
-            // Zuweiserei: erst in Variable holen, einmal setTextViewText und dann alle durchrasseln
-
-            for (int widgetId : appWidgetIds) {
-                remoteViews.setTextViewText(R.id.update, "");
-                appWidgetManager.updateAppWidget(widgetId, remoteViews);
-            }
-        }
-
-        private String translateWDir(Context context, String wDir) {
-            return context.getResources().getString(context.getResources().getIdentifier("wdir_" + wDir, "string", context.getPackageName()));
-        }
-
-        private String translateBft(Context context, int bftMid, int bftMax) {
-            if (bftMax < 0 || bftMax > 12) bftMax = bftMid;
-            if (bftMid < 0 || bftMid > 12) bftMid = bftMax;
-            if (bftMid < 0 || bftMid > 12)
-                return context.getString(R.string.bft_unknown);
-            else {
-                if (bftMid == bftMax)
-                    return context.getResources().getString(context.getResources().getIdentifier("bft_" + Integer.toString(bftMid), "string", context.getPackageName()));
-                else
-                    return context.getString(R.string.bft_range, context.getResources().getString(context.getResources().getIdentifier("bft_" + Integer.toString(bftMid), "string", context.getPackageName())), context.getResources().getString(context.getResources().getIdentifier("bft_" + Integer.toString(bftMax), "string", context.getPackageName())));
-            }
-        }
-
-        private String getNonbreakingText(String text) {
-            StringBuilder builder = new StringBuilder(text.length() * 2);
-            for (int i = 0; i < text.length(); i++) {
-                builder.append(text.charAt(i));
-                builder.append("\u200B");
-            }
-            return builder.toString();
-        }
-
-        private int nextOccPos(String page, int pos, String stopper, boolean rtl) {
-            int nextPos, lenS;
-            char firstS;
-            lenS = stopper.length();
-            firstS = stopper.charAt(0);
-            if (rtl) {
-                for (nextPos = pos; nextPos >= 0; nextPos--) {
-                    if (page.charAt(nextPos) == firstS) {
-                        if (page.substring(nextPos, nextPos + lenS).equals(stopper)) break;
-                    }
-                }
-            } else {
-                for (nextPos = pos; nextPos < page.length(); nextPos++) {
-                    if (page.charAt(nextPos) == firstS) {
-                        if (page.substring(nextPos, nextPos + lenS).equals(stopper)) break;
-                    }
-                }
-            }
-            return nextPos;
-        }
-
-        private String getInnerText(String page, int pos, String leftStopper, String rightStopper, boolean rtl) {
-            int leftPos, rightPos, lenLS, lenRS;
-            char firstL, firstR;
-            lenLS = leftStopper.length();
-            lenRS = rightStopper.length();
-            firstL = leftStopper.charAt(0);
-            firstR = rightStopper.charAt(0);
-            if (rtl) {
-                for (leftPos = pos; leftPos >= 0; leftPos--) {
-                    if (page.charAt(leftPos) == firstL) {
-                        if (page.substring(leftPos, leftPos + lenLS).equals(leftStopper)) break;
-                    }
-                }
-                if (leftPos == -1) return "";
-                for (rightPos = leftPos; rightPos < page.length(); rightPos++) {
-                    if (page.charAt(rightPos) == firstR) {
-                        if (page.substring(rightPos, rightPos + lenRS).equals(rightStopper)) break;
-                    }
-                }
-                if (rightPos == page.length()) return "";
-            } else {
-                for (rightPos = pos; rightPos < page.length(); rightPos++) {
-                    if (page.charAt(rightPos) == firstR) {
-                        if (page.substring(rightPos, rightPos + lenRS).equals(rightStopper)) break;
-                    }
-                }
-                if (rightPos == page.length()) return "";
-                for (leftPos = rightPos; leftPos >= 0; leftPos--) {
-                    if (page.charAt(leftPos) == firstL) {
-                        if (page.substring(leftPos, leftPos + lenLS).equals(leftStopper)) break;
-                    }
-                }
-                if (leftPos == -1) return "";
-            }
-            return page.substring(leftPos + lenLS, rightPos);
-        }
-
     }
 }

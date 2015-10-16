@@ -64,6 +64,65 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         }
     }
 
+    public static SpannableStringBuilder retrieve(SQLiteDatabase db) {
+        Cursor c;
+        SpannableStringBuilder list = new SpannableStringBuilder();
+        int start;
+
+        //sky || ' in ' || city || ' am ' || day || ' ab ' || ltrim(substr(time, 7, 2), '0') || ' Uhr mit ' || precip || ' bei ' || temp || ' und ' || windname || ' aus ' || winddir
+
+        c = db.rawQuery("select sky, city, day, ltrim(substr(time, 7, 2), '0'), precip, temp, windname, winddir from forecast order by time", null);
+        if (c != null) {
+            if (c.moveToFirst()) {
+                do {
+                    if (list.length() != 0) list.append(" +++ ");
+                    start = list.length();
+                    list.append(getZeroSpacedText(c.getString(0)));
+                    list.setSpan(new ForegroundColorSpan(0xFFFFFF22), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    list.append(getZeroSpacedText(" in "));
+                    start = list.length();
+                    list.append(getZeroSpacedText(c.getString(1)));
+                    list.setSpan(new ForegroundColorSpan(0xFFFFFF22), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    list.append(getZeroSpacedText(" am "));
+                    start = list.length();
+                    list.append(getZeroSpacedText(c.getString(2)));
+                    list.setSpan(new ForegroundColorSpan(0xFFFFFFA0), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    list.append(getZeroSpacedText(" ab "));
+                    start = list.length();
+                    list.append(getZeroSpacedText(c.getString(3) + " Uhr"));
+                    list.setSpan(new ForegroundColorSpan(0xFFFFFFA0), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    list.append(getZeroSpacedText(" mit "));
+                    start = list.length();
+                    list.append(getZeroSpacedText(c.getString(4)));
+                    list.setSpan(new ForegroundColorSpan(0xFFFFFFA0), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    list.append(getZeroSpacedText(" bei "));
+                    start = list.length();
+                    list.append(getZeroSpacedText(c.getString(5)));
+                    list.setSpan(new ForegroundColorSpan(0xFFFFFFA0), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    list.append(getZeroSpacedText(" und "));
+                    start = list.length();
+                    list.append(getZeroSpacedText(c.getString(6)));
+                    list.setSpan(new ForegroundColorSpan(0xFFFFFFA0), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    list.append(getZeroSpacedText(" aus "));
+                    start = list.length();
+                    list.append(getZeroSpacedText(c.getString(7)));
+                    list.setSpan(new ForegroundColorSpan(0xFFFFFFA0), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                } while (c.moveToNext());
+            }
+            c.close();
+        }
+        return list;
+    }
+
+    private static String getZeroSpacedText(String text) {
+        StringBuilder builder = new StringBuilder(text.length() * 2);
+        for (int i = 0; i < text.length(); i++) {
+            builder.append(text.charAt(i));
+            builder.append("\u200B");
+        }
+        return builder.toString();
+    }
+
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL("create table if not exists forecast (location text, time integer, city text, day text, sky text, temp text, precip text, windname text, winddir text, primary key (location, time))");
@@ -84,56 +143,5 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         //db.execSQL("drop table if exists logfile");
         onCreate(db);
-    }
-
-    public Spannable retrieve(SQLiteDatabase db, String location) {
-        Cursor c;
-        SpannableStringBuilder list = new SpannableStringBuilder();
-        int start;
-
-        //sky || ' in ' || city || ' am ' || day || ' ab ' || ltrim(substr(time, 7, 2), '0') || ' Uhr mit ' || precip || ' bei ' || temp || ' und ' || windname || ' aus ' || winddir
-
-        c = db.rawQuery("select sky, city, day, ltrim(substr(time, 7, 2), '0'), precip, temp, windname, winddir where location = ? order by time", new String[]{location});
-        if (c != null) {
-            if (c.moveToFirst()) {
-                do {
-                    if (list.length() != 0) list.append("\n");
-                    start = list.length();
-                    list.append(c.getString(0));
-                    list.setSpan(new ForegroundColorSpan(0xFFFF0000), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    list.append(" in ");
-                    start = list.length();
-                    list.append(c.getString(1));
-                    list.setSpan(new ForegroundColorSpan(0xFFFF0000), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    list.append(" am ");
-                    start = list.length();
-                    list.append(c.getString(2));
-                    list.setSpan(new ForegroundColorSpan(0xFFFF0000), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    list.append(" ab ");
-                    start = list.length();
-                    list.append(c.getString(3));
-                    list.setSpan(new ForegroundColorSpan(0xFFFF0000), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    list.append(" Uhr mit ");
-                    start = list.length();
-                    list.append(c.getString(4));
-                    list.setSpan(new ForegroundColorSpan(0xFFFF0000), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    list.append(" bei ");
-                    start = list.length();
-                    list.append(c.getString(5));
-                    list.setSpan(new ForegroundColorSpan(0xFFFF0000), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    list.append(" und ");
-                    start = list.length();
-                    list.append(c.getString(6));
-                    list.setSpan(new ForegroundColorSpan(0xFFFF0000), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    list.append(" aus ");
-                    start = list.length();
-                    list.append(c.getString(7));
-                    list.setSpan(new ForegroundColorSpan(0xFFFF0000), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                } while (c.moveToNext());
-            }
-            c.close();
-        }
-
-        return list;
     }
 }

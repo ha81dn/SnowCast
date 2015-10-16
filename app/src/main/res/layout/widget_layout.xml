@@ -1,22 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ListView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_margin="2dip"
-    android:background="@color/colorPrimaryDark">
+    android:background="#55000000"
+    android:orientation="vertical">
 
     <TextView
         android:id="@+id/update"
         style="@android:style/TextAppearance.Medium"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_margin="4dip"
         android:gravity="center_horizontal|center_vertical"
-        android:text="@string/app_name"
-        android:textSize="14dp"
-        android:textStyle=""
+        android:text=""
+        android:textSize="14sp"
         android:typeface="monospace" />
 
-</ListView>
+</LinearLayout>
