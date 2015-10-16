@@ -47,4 +47,5 @@
     <string name="forecast_title">"+++ SnowCast-Liveticker%1$s +++\n"</string>
     <string name="last_update">" (%1$s Uhr)"</string>
     <string name="no_data_available">Keine Wetterdaten über zu erwartenden Schneefall verfügbar.</string>
+    <string name="tap_to_update">"+++ SnowCast-Liveticker +++\nZum Abrufen aktueller Wetterdaten bitte antippen!"</string>
 </resources>
