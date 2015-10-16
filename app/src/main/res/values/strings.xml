@@ -11,8 +11,8 @@
     <string name="pref_default_idx3">2949235-biebrich</string>
     <string name="pref_default_idx4">2959771-abtsdorf</string>
     <string name="pref_default_idx5" />
-    <string name="data_fetch_0">Wetterdaten werden abgerufen&#8200;&#8200;&#8200;</string>
-    <string name="data_fetch_1">Wetterdaten werden abgerufen&#46;&#46;&#46;</string>
+    <string name="data_fetch_0">"\nWetterdaten werden abgerufen&#8200;&#8200;&#8200;"</string>
+    <string name="data_fetch_1">"\nWetterdaten werden abgerufen&#46;&#46;&#46;"</string>
     <string name="bft_0">Windstille</string>
     <string name="bft_1">leisem Zug</string>
     <string name="bft_2">leichter Brise</string>
@@ -47,5 +47,5 @@
     <string name="forecast_title">"+++ SnowCast-Liveticker%1$s +++\n"</string>
     <string name="last_update">" (%1$s Uhr)"</string>
     <string name="no_data_available">Keine Wetterdaten über zu erwartenden Schneefall verfügbar.</string>
-    <string name="tap_to_update">"+++ SnowCast-Liveticker +++\nZum Abrufen aktueller Wetterdaten bitte antippen!"</string>
+    <string name="tap_to_update">"\nZum Abrufen aktueller Wetterdaten bitte antippen!"</string>
 </resources>

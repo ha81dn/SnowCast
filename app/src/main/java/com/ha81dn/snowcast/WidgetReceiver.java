@@ -83,6 +83,7 @@ public class WidgetReceiver extends AppWidgetProvider {
         SQLiteDatabase db = DatabaseHandler.getInstance(context).getWritableDatabase();
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
         RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+        DatabaseHandler.discardObsolete(db);
         SpannableStringBuilder list = DatabaseHandler.retrieve(db);
         String tmp = sharedPref.getString("last_update", "");
         tmp = context.getString(R.string.forecast_title, tmp.equals("") ? "" : context.getString(R.string.last_update, tmp));
@@ -249,11 +250,6 @@ public class WidgetReceiver extends AppWidgetProvider {
                             windname = translateBft(context, Integer.parseInt(wMid), Integer.parseInt(wMax));
                             winddir = translateWDir(context, winddir);
                             DatabaseHandler.store(db, location, time, sky, city, day, temp, precip, windname, winddir);
-                            SharedPreferences.Editor edit = sharedPref.edit();
-                            SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault());
-                            Calendar now = Calendar.getInstance();
-                            edit.putString("last_update", sdf.format(now.getTime()));
-                            edit.apply();
                         } while (false);
                     } catch (Exception ignore) {
                     }
@@ -285,6 +281,12 @@ public class WidgetReceiver extends AppWidgetProvider {
         @Override
         protected void onPostExecute(Void result) {
             if (index.equals("idx5")) {
+                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+                SharedPreferences.Editor edit = sharedPref.edit();
+                SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault());
+                Calendar now = Calendar.getInstance();
+                edit.putString("last_update", sdf.format(now.getTime()));
+                edit.apply();
                 showForecast(context, appWidgetManager, appWidgetManager.getAppWidgetIds(new ComponentName(context, WidgetReceiver.class)));
             } else {
                 AsyncTask<String, Void, Void> getter = new HttpAsyncTask();

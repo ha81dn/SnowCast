@@ -34,8 +34,6 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         Cursor c;
         ContentValues vals = new ContentValues();
         boolean update = false;
-        SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHH", Locale.getDefault());
-        Calendar now = Calendar.getInstance();
 
         c = db.rawQuery("select count(*) from forecast where location = ? and time = ?", new String[]{location, time});
         if (c != null) {
@@ -56,6 +54,12 @@ public class DatabaseHandler extends SQLiteOpenHelper {
             db.update("forecast", vals, "location = ? and time = ?", new String[]{location, time});
         else
             db.insert("forecast", null, vals);
+    }
+
+    public static void discardObsolete(SQLiteDatabase db) {
+        Cursor c;
+        SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHH", Locale.getDefault());
+        Calendar now = Calendar.getInstance();
 
         c = db.rawQuery("delete from forecast where time < ? or time > 99123123", new String[]{sdf.format(now.getTime())});
         if (c != null) {
