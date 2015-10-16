@@ -11,8 +11,8 @@
     <string name="pref_default_idx3">2949235-biebrich</string>
     <string name="pref_default_idx4">2959771-abtsdorf</string>
     <string name="pref_default_idx5" />
-    <string name="data_fetch_0">Wetterdaten werden abgerufen</string>
-    <string name="data_fetch_1">Wetterdaten werden abgerufen&#8230;</string>
+    <string name="data_fetch_0">Wetterdaten werden abgerufen&#8200;&#8200;&#8200;</string>
+    <string name="data_fetch_1">Wetterdaten werden abgerufen&#46;&#46;&#46;</string>
     <string name="bft_0">Windstille</string>
     <string name="bft_1">leisem Zug</string>
     <string name="bft_2">leichter Brise</string>
