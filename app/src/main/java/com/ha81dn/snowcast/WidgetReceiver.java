@@ -9,6 +9,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.text.Layout;
 import android.text.Spannable;
@@ -30,27 +32,61 @@ import java.util.Calendar;
 import java.util.Locale;
 
 public class WidgetReceiver extends AppWidgetProvider {
-    @Override
-    public void onEnabled(Context context) {
-        super.onEnabled(context);
+    private static boolean recentlyClicked = false;
+    private static boolean lastUpdateCompleted = true;
+    private static long heartbeat = 0;
+    private static Handler clickHandler = new Handler();
+    private static Runnable clickRunnable = new Runnable() {
+        @Override
+        public void run() {
+            recentlyClicked = false;
+        }
+    };
+    private static Handler monitoringHandler = new Handler();
+    private static Runnable monitoringRunnable;
+    private static AsyncTask<String, Void, Void> currentTask;
+
+    private static Runnable createMonitoring(final Context context) {
+        return new Runnable() {
+            @Override
+            public void run() {
+                if (!lastUpdateCompleted) {
+                    if (SystemClock.elapsedRealtime() - heartbeat >= 9000) {
+                        if (currentTask != null) {
+                            try {
+                                currentTask.cancel(true);
+                            } catch (Exception ignore) {
+                            }
+                        }
+                        lastUpdateCompleted = true;
+                        try {
+                            clickHandler.removeCallbacks(clickRunnable);
+                        } catch (Exception ignore) {
+                        }
+                        recentlyClicked = false;
+                        getData(context);
+                    } else
+                        monitoringHandler.postDelayed(monitoringRunnable, 10000);
+                }
+            }
+        };
     }
 
-    @Override
-    public void onDisabled(Context context) {
-        super.onDisabled(context);
-    }
+    private static void getData(Context context) {
+        recentlyClicked = true;
+        lastUpdateCompleted = false;
+        if (monitoringRunnable == null) monitoringRunnable = createMonitoring(context);
+        monitoringHandler.postDelayed(monitoringRunnable, 10000);
+        clickHandler.postDelayed(clickRunnable, 30000);
+        AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
 
-    @Override
-    public void onReceive(Context context, Intent intent) {
-        super.onReceive(context, intent);
-        if (intent.getAction().equals("com.ha81dn.snowcast.UPDATE")) {
-            AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
-
-            AsyncTask<String, Void, Void> getter = new HttpAsyncTask();
-            ((HttpAsyncTask) getter).context = context;
-            ((HttpAsyncTask) getter).appWidgetManager = appWidgetManager;
-            ((HttpAsyncTask) getter).index = "idx1";
+        currentTask = new HttpAsyncTask();
+        ((HttpAsyncTask) currentTask).context = context;
+        ((HttpAsyncTask) currentTask).appWidgetManager = appWidgetManager;
+        ((HttpAsyncTask) currentTask).index = "idx1";
+        try {
             RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+            applyOnClick(context, remoteViews);
             remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_1));
 
             ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
@@ -58,31 +94,33 @@ public class WidgetReceiver extends AppWidgetProvider {
             for (int widgetId : allWidgetIds) {
                 appWidgetManager.updateAppWidget(widgetId, remoteViews);
             }
-            getter.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "http://kachelmannwetter.com/de/vorhersage/#idx/lighttrend");
+        } catch (Exception ignore) {
         }
+        currentTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "http://kachelmannwetter.com/de/vorhersage/#idx/lighttrend");
     }
 
-    @Override
-    public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-        super.onUpdate(context, appWidgetManager, appWidgetIds);
-        ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
-        int[] allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
-        for (int widgetId : allWidgetIds) {
+    private static void prepareWidget(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        for (int widgetId : appWidgetIds) {
             RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-            Intent intent = new Intent(context, WidgetReceiver.class);
-            intent.setAction("com.ha81dn.snowcast.UPDATE");
-            intent.addCategory(Intent.CATEGORY_DEFAULT);
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-            remoteViews.setOnClickPendingIntent(R.id.update, pendingIntent);
+            applyOnClick(context, remoteViews);
             appWidgetManager.updateAppWidget(widgetId, remoteViews);
         }
         showForecast(context, appWidgetManager, appWidgetManager.getAppWidgetIds(new ComponentName(context, WidgetReceiver.class)));
     }
 
-    private void showForecast(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+    private static void applyOnClick(Context context, RemoteViews remoteViews) {
+        Intent intent = new Intent(context, WidgetReceiver.class);
+        intent.setAction("com.ha81dn.snowcast.UPDATE");
+        intent.addCategory(Intent.CATEGORY_DEFAULT);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        remoteViews.setOnClickPendingIntent(R.id.update, pendingIntent);
+    }
+
+    private static void showForecast(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         SQLiteDatabase db = DatabaseHandler.getInstance(context).getWritableDatabase();
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
         RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+        applyOnClick(context, remoteViews);
         DatabaseHandler.discardObsolete(db);
         SpannableStringBuilder list = DatabaseHandler.retrieve(db);
         String tmp = sharedPref.getString("last_update", "");
@@ -99,11 +137,11 @@ public class WidgetReceiver extends AppWidgetProvider {
         for (int widgetId : appWidgetIds) appWidgetManager.updateAppWidget(widgetId, remoteViews);
     }
 
-    private String translateWDir(Context context, String wDir) {
+    private static String translateWDir(Context context, String wDir) {
         return context.getResources().getString(context.getResources().getIdentifier("wdir_" + wDir, "string", context.getPackageName()));
     }
 
-    private String translateBft(Context context, int bftMid, int bftMax) {
+    private static String translateBft(Context context, int bftMid, int bftMax) {
         if (bftMax < 0 || bftMax > 12) bftMax = bftMid;
         if (bftMid < 0 || bftMid > 12) bftMid = bftMax;
         if (bftMid < 0 || bftMid > 12)
@@ -116,7 +154,7 @@ public class WidgetReceiver extends AppWidgetProvider {
         }
     }
 
-    private int nextOccPos(String page, int pos, String stopper, boolean rtl) {
+    private static int nextOccPos(String page, int pos, String stopper, boolean rtl) {
         int nextPos, lenS;
         char firstS;
         lenS = stopper.length();
@@ -137,7 +175,7 @@ public class WidgetReceiver extends AppWidgetProvider {
         return nextPos;
     }
 
-    private String getInnerText(String page, int pos, String leftStopper, String rightStopper, boolean rtl) {
+    private static String getInnerText(String page, int pos, String leftStopper, String rightStopper, boolean rtl) {
         int leftPos, rightPos, lenLS, lenRS;
         char firstL, firstR;
         lenLS = leftStopper.length();
@@ -174,134 +212,180 @@ public class WidgetReceiver extends AppWidgetProvider {
         return page.substring(leftPos + lenLS, rightPos);
     }
 
-    private class HttpAsyncTask extends AsyncTask<String, Void, Void> {
+    @Override
+    public void onEnabled(Context context) {
+        super.onEnabled(context);
+        AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+        ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
+        int[] allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
+        prepareWidget(context, appWidgetManager, allWidgetIds);
+    }
+
+    @Override
+    public void onDisabled(Context context) {
+        super.onDisabled(context);
+    }
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        super.onReceive(context, intent);
+        if (intent.getAction().equals("com.ha81dn.snowcast.UPDATE")) {
+            if (!recentlyClicked) getData(context);
+        }
+    }
+
+    @Override
+    public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        super.onUpdate(context, appWidgetManager, appWidgetIds);
+        prepareWidget(context, appWidgetManager, appWidgetIds);
+    }
+
+    private static class HttpAsyncTask extends AsyncTask<String, Void, Void> {
         public AppWidgetManager appWidgetManager;
         public Context context;
-        public String index;
+        public String index = "";
         boolean flag = false;
 
         @Override
         protected Void doInBackground(String... urls) {
-            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
-            StringBuilder chaine = new StringBuilder("");
-            String location = sharedPref.getString(index, "").trim();
-            if (location.equals("")) return null;
-
             try {
-                URL url = new URL(urls[0].replace("#idx", location));
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("GET");
-                connection.setDoInput(true);
-                connection.setConnectTimeout(60000);
-                connection.connect();
+                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+                StringBuilder chaine = new StringBuilder("");
+                String location = sharedPref.getString(index, "").trim();
+                if (location.equals("")) return null;
 
-                InputStream inputStream = connection.getInputStream();
+                try {
+                    URL url = new URL(urls[0].replace("#idx", location));
+                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                    connection.setRequestMethod("GET");
+                    connection.setDoInput(true);
+                    connection.setConnectTimeout(60000);
+                    connection.connect();
 
-                BufferedReader rd = new BufferedReader(new InputStreamReader(inputStream));
-                String line;
-                int i = 0;
-                while ((line = rd.readLine()) != null) {
-                    i++;
-                    chaine.append(line);
-                    if (i % 10 == 0) publishProgress();
+                    InputStream inputStream = connection.getInputStream();
+
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(inputStream));
+                    String line;
+                    int i = 0;
+                    while ((line = rd.readLine()) != null) {
+                        if (isCancelled()) break;
+                        i++;
+                        chaine.append(line);
+                        if (i % 10 == 0) publishProgress();
+                    }
+                } catch (Exception ignore) {
+                }
+
+                String result = chaine.toString(), time, day, sky, city = "", temp, precip, windname, winddir, wMid, wMax;
+                int snowPos, pos, len = result.length();
+
+                if (!result.equals("")) {
+                    SQLiteDatabase db = DatabaseHandler.getInstance(context).getWritableDatabase();
+                    snowPos = result.indexOf("chnee");
+                    if (snowPos >= 0)
+                        city = getInnerText(result, 0, "<title>Wettervorhersage Light für ", " |", false);
+                    while (snowPos >= 0) {
+                        try {
+                            do {
+                                sky = getInnerText(result, snowPos, "<p>", "</p>", true);
+                                pos = nextOccPos(result, snowPos, "<h4>", true);
+                                if (pos == -1) break;
+                                time = getInnerText(result, pos, ">", ":", false);
+                                pos = nextOccPos(result, pos, "\">Temperatur<", false);
+                                if (pos == len) break;
+                                pos = nextOccPos(result, pos + 10, "\">", false);
+                                if (pos == len) break;
+                                temp = getInnerText(result, pos, ">", "<", false).replace(".", ",");
+                                pos = nextOccPos(result, pos, "\">Niederschlag<", false);
+                                if (pos == len) break;
+                                pos = nextOccPos(result, pos + 10, "\">", false);
+                                if (pos == len) break;
+                                precip = getInnerText(result, pos, ">", "<", false).replace(".", ",");
+                                pos = nextOccPos(result, pos, " Bft", false);
+                                wMax = getInnerText(result, pos, "/ ", " B", true);
+                                pos = nextOccPos(result, pos + 10, " Bft", false);
+                                wMid = getInnerText(result, pos, "/ ", " B", true);
+                                pos = nextOccPos(result, pos, "wi-from-", false);
+                                if (pos == len) break;
+                                winddir = getInnerText(result, pos, "-", " wind-daytable", false);
+                                pos = nextOccPos(result, snowPos, "\"day_", true);
+                                if (pos == -1) break;
+                                time = getInnerText(result, pos, "_", "\">", false) + time;
+                                if (time.length() != 8) break;
+                                pos = nextOccPos(result, pos, ",", false);
+                                if (pos == len) break;
+                                day = getInnerText(result, pos, " ", ",", true);
+                                windname = translateBft(context, Integer.parseInt(wMid), Integer.parseInt(wMax));
+                                winddir = translateWDir(context, winddir);
+                                DatabaseHandler.store(db, location, time, sky, city, day, temp, precip, windname, winddir);
+                            } while (false);
+                        } catch (Exception ignore) {
+                        }
+                        snowPos = result.indexOf("chnee", snowPos + 5);
+                    }
+                    db.close();
                 }
             } catch (Exception ignore) {
-            }
-
-            String result = chaine.toString(), time, day, sky, city = "", temp, precip, windname, winddir, wMid, wMax;
-            int snowPos, pos, len = result.length();
-
-            if (!result.equals("")) {
-                SQLiteDatabase db = DatabaseHandler.getInstance(context).getWritableDatabase();
-                snowPos = result.indexOf("chnee");
-                if (snowPos >= 0)
-                    city = getInnerText(result, 0, "<title>Wettervorhersage Light für ", " |", false);
-                while (snowPos >= 0) {
-                    try {
-                        do {
-                            sky = getInnerText(result, snowPos, "<p>", "</p>", true);
-                            pos = nextOccPos(result, snowPos, "<h4>", true);
-                            if (pos == -1) break;
-                            time = getInnerText(result, pos, ">", ":", false);
-                            pos = nextOccPos(result, pos, "\">Temperatur<", false);
-                            if (pos == len) break;
-                            pos = nextOccPos(result, pos + 10, "\">", false);
-                            if (pos == len) break;
-                            temp = getInnerText(result, pos, ">", "<", false).replace(".", ",");
-                            pos = nextOccPos(result, pos, "\">Niederschlag<", false);
-                            if (pos == len) break;
-                            pos = nextOccPos(result, pos + 10, "\">", false);
-                            if (pos == len) break;
-                            precip = getInnerText(result, pos, ">", "<", false).replace(".", ",");
-                            pos = nextOccPos(result, pos, " Bft", false);
-                            wMax = getInnerText(result, pos, "/ ", " B", true);
-                            pos = nextOccPos(result, pos + 10, " Bft", false);
-                            wMid = getInnerText(result, pos, "/ ", " B", true);
-                            pos = nextOccPos(result, pos, "wi-from-", false);
-                            if (pos == len) break;
-                            winddir = getInnerText(result, pos, "-", " wind-daytable", false);
-                            pos = nextOccPos(result, snowPos, "\"day_", true);
-                            if (pos == -1) break;
-                            time = getInnerText(result, pos, "_", "\">", false) + time;
-                            if (time.length() != 8) break;
-                            pos = nextOccPos(result, pos, ",", false);
-                            if (pos == len) break;
-                            day = getInnerText(result, pos, " ", ",", true);
-                            windname = translateBft(context, Integer.parseInt(wMid), Integer.parseInt(wMax));
-                            winddir = translateWDir(context, winddir);
-                            DatabaseHandler.store(db, location, time, sky, city, day, temp, precip, windname, winddir);
-                        } while (false);
-                    } catch (Exception ignore) {
-                    }
-                    snowPos = result.indexOf("chnee", snowPos + 5);
-                }
-                db.close();
             }
             return null;
         }
 
         @Override
         protected void onProgressUpdate(Void... voids) {
-            RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-            if (flag) {
-                remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_1));
-                flag = false;
-            } else {
-                remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_0));
-                flag = true;
-            }
-
-            ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
-            int[] allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
-            for (int widgetId : allWidgetIds) {
-                appWidgetManager.updateAppWidget(widgetId, remoteViews);
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Void result) {
-            if (index.equals("idx5")) {
-                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
-                SharedPreferences.Editor edit = sharedPref.edit();
-                SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault());
-                Calendar now = Calendar.getInstance();
-                edit.putString("last_update", sdf.format(now.getTime()));
-                edit.apply();
-                showForecast(context, appWidgetManager, appWidgetManager.getAppWidgetIds(new ComponentName(context, WidgetReceiver.class)));
-            } else {
-                AsyncTask<String, Void, Void> getter = new HttpAsyncTask();
-                ((HttpAsyncTask) getter).context = context;
-                ((HttpAsyncTask) getter).appWidgetManager = appWidgetManager;
-                ((HttpAsyncTask) getter).index = "idx" + Integer.toString(Integer.parseInt(index.substring(3, 4)) + 1);
+            try {
                 RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-                remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_1));
+                applyOnClick(context, remoteViews);
+                if (flag) {
+                    remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_1));
+                    flag = false;
+                } else {
+                    remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_0));
+                    flag = true;
+                }
 
                 ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
                 int[] allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
                 for (int widgetId : allWidgetIds) {
                     appWidgetManager.updateAppWidget(widgetId, remoteViews);
                 }
-                getter.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "http://kachelmannwetter.com/de/vorhersage/#idx/lighttrend");
+            } catch (Exception ignore) {
+            }
+            heartbeat = SystemClock.elapsedRealtime();
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            if (isCancelled()) return;
+            if (index.equals("idx5")) {
+                try {
+                    SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+                    SharedPreferences.Editor edit = sharedPref.edit();
+                    SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault());
+                    Calendar now = Calendar.getInstance();
+                    edit.putString("last_update", sdf.format(now.getTime()));
+                    edit.apply();
+                    showForecast(context, appWidgetManager, appWidgetManager.getAppWidgetIds(new ComponentName(context, WidgetReceiver.class)));
+                } catch (Exception ignore) {
+                }
+                lastUpdateCompleted = true;
+            } else {
+                currentTask = new HttpAsyncTask();
+                ((HttpAsyncTask) currentTask).context = context;
+                ((HttpAsyncTask) currentTask).appWidgetManager = appWidgetManager;
+                ((HttpAsyncTask) currentTask).index = "idx" + Integer.toString(Integer.parseInt(index.substring(3, 4)) + 1);
+                try {
+                    RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+                    applyOnClick(context, remoteViews);
+                    remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_1));
+
+                    ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
+                    int[] allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
+                    for (int widgetId : allWidgetIds) {
+                        appWidgetManager.updateAppWidget(widgetId, remoteViews);
+                    }
+                } catch (Exception ignore) {
+                }
+                currentTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "http://kachelmannwetter.com/de/vorhersage/#idx/lighttrend");
             }
         }
     }
