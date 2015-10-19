@@ -35,6 +35,7 @@ public class WidgetReceiver extends AppWidgetProvider {
     private static boolean recentlyClicked = false;
     private static boolean lastUpdateCompleted = true;
     private static long heartbeat = 0;
+    private static int retries = 0;
     private static Handler clickHandler = new Handler();
     private static Runnable clickRunnable = new Runnable() {
         @Override
@@ -64,7 +65,23 @@ public class WidgetReceiver extends AppWidgetProvider {
                         } catch (Exception ignore) {
                         }
                         recentlyClicked = false;
-                        getData(context);
+                        if (retries >= 30) {
+                            try {
+                                RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+                                applyOnClick(context, remoteViews);
+                                remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_err));
+                                AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+                                ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
+                                int[] allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
+                                for (int widgetId : allWidgetIds) {
+                                    appWidgetManager.updateAppWidget(widgetId, remoteViews);
+                                }
+                            } catch (Exception ignore) {
+                            }
+                        } else {
+                            getData(context);
+                            retries++;
+                        }
                     } else
                         monitoringHandler.postDelayed(monitoringRunnable, 10000);
                 }
@@ -230,7 +247,10 @@ public class WidgetReceiver extends AppWidgetProvider {
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
         if (intent.getAction().equals("com.ha81dn.snowcast.UPDATE")) {
-            if (!recentlyClicked) getData(context);
+            if (!recentlyClicked) {
+                retries = 0;
+                getData(context);
+            }
         }
     }
 

@@ -13,6 +13,7 @@
     <string name="pref_default_idx5" />
     <string name="data_fetch_0">"\nWetterdaten werden abgerufen&#8200;&#8200;&#8200;"</string>
     <string name="data_fetch_1">"\nWetterdaten werden abgerufen&#46;&#46;&#46;"</string>
+    <string name="data_fetch_err">"\nWetterdienst nicht erreichbar.\nBitte versuchen Sie es später erneut."</string>
     <string name="bft_0">Windstille</string>
     <string name="bft_1">leisem Zug</string>
     <string name="bft_2">leichter Brise</string>
