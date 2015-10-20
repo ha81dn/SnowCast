@@ -65,7 +65,7 @@ public class WidgetReceiver extends AppWidgetProvider {
                         } catch (Exception ignore) {
                         }
                         recentlyClicked = false;
-                        if (retries >= 30) {
+                        if (retries >= 15) {
                             try {
                                 RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
                                 applyOnClick(context, remoteViews);
