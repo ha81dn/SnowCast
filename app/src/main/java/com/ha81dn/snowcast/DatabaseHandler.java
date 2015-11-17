@@ -30,7 +30,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         return mInstance;
     }
 
-    public static void store(SQLiteDatabase db, String location, String time, String sky, String city, String day, String temp, String precip, String windname, String winddir) {
+    public static void store(SQLiteDatabase db, String location, String time, String sky, String city, String day, String temp, String precip, String windname, String winddir, String stamp) {
         Cursor c;
         ContentValues vals = new ContentValues();
         boolean update = false;
@@ -50,6 +50,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         vals.put("precip", precip);
         vals.put("windname", windname);
         vals.put("winddir", winddir);
+        vals.put("stamp", stamp);
         if (update)
             db.update("forecast", vals, "location = ? and time = ?", new String[]{location, time});
         else
@@ -62,6 +63,16 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         Calendar now = Calendar.getInstance();
 
         c = db.rawQuery("delete from forecast where time < ? or time > 99123123", new String[]{sdf.format(now.getTime())});
+        if (c != null) {
+            c.moveToFirst();
+            c.close();
+        }
+    }
+
+    public static void discardObsolete(SQLiteDatabase db, String location, String stamp) {
+        Cursor c;
+
+        c = db.rawQuery("delete from forecast where location = ? and stamp != ?", new String[]{location, stamp});
         if (c != null) {
             c.moveToFirst();
             c.close();
@@ -129,7 +140,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL("create table if not exists forecast (location text, time integer, city text, day text, sky text, temp text, precip text, windname text, winddir text, primary key (location, time))");
+        db.execSQL("create table if not exists forecast (location text, time integer, city text, day text, sky text, temp text, precip text, windname text, winddir text, stamp integer, primary key (location, time))");
     }
 
     @Override

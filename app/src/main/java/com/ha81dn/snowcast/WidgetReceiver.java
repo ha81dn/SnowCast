@@ -272,6 +272,10 @@ public class WidgetReceiver extends AppWidgetProvider {
                 SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
                 StringBuilder chaine = new StringBuilder("");
                 String location = sharedPref.getString(index, "").trim();
+                SimpleDateFormat sdf;
+                Calendar now;
+                String stamp = null;
+                boolean foundSnow = false;
                 if (location.equals("")) return null;
 
                 try {
@@ -337,11 +341,21 @@ public class WidgetReceiver extends AppWidgetProvider {
                                 day = getInnerText(result, pos, " ", ",", true);
                                 windname = translateBft(context, Integer.parseInt(wMid), Integer.parseInt(wMax));
                                 winddir = translateWDir(context, winddir);
-                                DatabaseHandler.store(db, location, time, sky, city, day, temp, precip, windname, winddir);
+                                if (!foundSnow) {
+                                    sdf = new SimpleDateFormat("yyMMddHHmmss", Locale.getDefault());
+                                    now = Calendar.getInstance();
+                                    stamp = sdf.format(now.getTime());
+                                    foundSnow = true;
+                                }
+                                DatabaseHandler.store(db, location, time, sky, city, day, temp, precip, windname, winddir, stamp);
                             } while (false);
                         } catch (Exception ignore) {
                         }
                         snowPos = result.indexOf("chnee", snowPos + 5);
+                    }
+                    try {
+                        if (foundSnow) DatabaseHandler.discardObsolete(db, location, stamp);
+                    } catch (Exception ignore) {
                     }
                     db.close();
                 }
