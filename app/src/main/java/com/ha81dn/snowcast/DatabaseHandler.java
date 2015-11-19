@@ -86,7 +86,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
         //sky || ' in ' || city || ' am ' || day || ' ab ' || ltrim(substr(time, 7, 2), '0') || ' Uhr mit ' || precip || ' bei ' || temp || ' und ' || windname || ' aus ' || winddir
 
-        c = db.rawQuery("select sky, city, day, ltrim(substr(time, 7, 2), '0'), precip, temp, windname, winddir from forecast order by time", null);
+        c = db.rawQuery("select sky, city, day, ltrim(substr(time, 7, 2), '0')+0, precip, temp, windname, winddir from forecast order by time", null);
         if (c != null) {
             if (c.moveToFirst()) {
                 do {
