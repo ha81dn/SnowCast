@@ -100,7 +100,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
                         start = list.length();
                         list.append(getZeroSpacedText(c.getString(0)));
                         list.setSpan(new ForegroundColorSpan(0xFFFFFF22), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        list.append(": ");
+                        list.append(getZeroSpacedText(": "));
                         loopFlag = false;
                         noSnow = true;
                         day = "";
@@ -114,20 +114,22 @@ public class DatabaseHandler extends SQLiteOpenHelper {
                             }
                             if (chars.length >= 1) {
                                 noSnow = false;
-                                if (loopFlag) list.append(", ");
-                                tmp = c.getString(1).substring(0, 2);
+                                if (loopFlag) list.append(getZeroSpacedText(", "));
+                                tmp = c.getString(1);
                                 if (!day.equals(tmp)) {
                                     day = tmp;
+                                    start = list.length();
                                     list.append(getZeroSpacedText(day));
-                                    list.append(" ");
+                                    list.setSpan(new ForegroundColorSpan(0xFFFFFFA0), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    list.append(getZeroSpacedText(" "));
                                 }
                                 list.append(getZeroSpacedText(c.getString(2) + "h "));
                                 start = list.length();
-                                list.append(new String(chars));
+                                list.append(getZeroSpacedText(new String(chars)));
                                 list.setSpan(new ForegroundColorSpan(0xFFFFFFA0), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                 if (c.getString(4).startsWith("-"))
                                     list.setSpan(new UnderlineSpan(), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                list.append(" ");
+                                list.append(getZeroSpacedText(" "));
                                 list.append(getZeroSpacedText(c.getString(5)));
                                 loopFlag = true;
                             }
