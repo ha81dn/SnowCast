@@ -2,14 +2,17 @@ package com.ha81dn.snowcast;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
+import android.text.style.UnderlineSpan;
 
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Locale;
 
@@ -79,13 +82,67 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         }
     }
 
-    public static SpannableStringBuilder retrieve(SQLiteDatabase db) {
+    public static SpannableStringBuilder retrieve(SQLiteDatabase db, SharedPreferences sharedPref, Context context) {
         Cursor c;
         SpannableStringBuilder list = new SpannableStringBuilder();
+        boolean loopFlag, noSnow;
         int start;
+        String location, day, tmp;
+        char[] chars;
+
+        for (int i = 1; i <= 5; i++) {
+            location = sharedPref.getString("idx" + i, "");
+            if (!location.equals("")) {
+                c = db.rawQuery("select city, day, ltrim(substr(time, 7, 2), '0')+0, precip, temp, winddir from forecast where location = ? order by time", new String[]{location});
+                if (c != null) {
+                    if (c.moveToFirst()) {
+                        if (list.length() != 0) list.append("\n");
+                        start = list.length();
+                        list.append(getZeroSpacedText(c.getString(0)));
+                        list.setSpan(new ForegroundColorSpan(0xFFFFFF22), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        list.append(": ");
+                        loopFlag = false;
+                        noSnow = true;
+                        day = "";
+                        do {
+                            try {
+                                chars = new char[Math.round(Float.parseFloat(c.getString(3).replace("mm", "").replace(",", ".")))];
+                                Arrays.fill(chars, '❄');
+                            } catch (Exception ignore) {
+                                chars = new char[0];
+                                chars[0] = '?';
+                            }
+                            if (chars.length >= 1) {
+                                noSnow = false;
+                                if (loopFlag) list.append(", ");
+                                tmp = c.getString(1).substring(0, 2);
+                                if (!day.equals(tmp)) {
+                                    day = tmp;
+                                    list.append(getZeroSpacedText(day));
+                                    list.append(" ");
+                                }
+                                list.append(getZeroSpacedText(c.getString(2) + "h "));
+                                start = list.length();
+                                list.append(new String(chars));
+                                list.setSpan(new ForegroundColorSpan(0xFFFFFFA0), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                if (c.getString(4).startsWith("-"))
+                                    list.setSpan(new UnderlineSpan(), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                list.append(" ");
+                                list.append(getZeroSpacedText(c.getString(5)));
+                                loopFlag = true;
+                            }
+                        } while (c.moveToNext());
+                        if (noSnow)
+                            list.append(getZeroSpacedText(context.getString(R.string.no_snow_expected)));
+                    }
+                    c.close();
+                }
+            }
+        }
 
         //sky || ' in ' || city || ' am ' || day || ' ab ' || ltrim(substr(time, 7, 2), '0') || ' Uhr mit ' || precip || ' bei ' || temp || ' und ' || windname || ' aus ' || winddir
 
+        /*
         c = db.rawQuery("select sky, city, day, ltrim(substr(time, 7, 2), '0')+0, precip, temp, windname, winddir from forecast order by time", null);
         if (c != null) {
             if (c.moveToFirst()) {
@@ -126,6 +183,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
             }
             c.close();
         }
+        */
         return list;
     }
 

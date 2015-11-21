@@ -139,7 +139,7 @@ public class WidgetReceiver extends AppWidgetProvider {
         RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
         applyOnClick(context, remoteViews);
         DatabaseHandler.discardObsolete(db);
-        SpannableStringBuilder list = DatabaseHandler.retrieve(db);
+        SpannableStringBuilder list = DatabaseHandler.retrieve(db, sharedPref, context);
         String tmp = sharedPref.getString("last_update", "");
         tmp = context.getString(R.string.forecast_title, tmp.equals("") ? "" : context.getString(R.string.last_update, tmp));
         if (list.length() == 0)
@@ -295,7 +295,7 @@ public class WidgetReceiver extends AppWidgetProvider {
                         if (isCancelled()) break;
                         i++;
                         chaine.append(line);
-                        if (i % 50 == 0) publishProgress();
+                        if (i % 100 == 0) publishProgress();
                     }
                 } catch (Exception ignore) {
                 }

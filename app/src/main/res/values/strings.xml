@@ -29,6 +29,23 @@
     <string name="bft_12">Orkan</string>
     <string name="bft_unknown">Wind</string>
     <string name="bft_range">%1$s bis %2$s</string>
+    <string name="wdir_n">N</string>
+    <string name="wdir_nne">NNO</string>
+    <string name="wdir_ne">NO</string>
+    <string name="wdir_ene">ONO</string>
+    <string name="wdir_e">O</string>
+    <string name="wdir_ese">OSO</string>
+    <string name="wdir_se">SO</string>
+    <string name="wdir_sse">SSO</string>
+    <string name="wdir_s">S</string>
+    <string name="wdir_ssw">SSW</string>
+    <string name="wdir_sw">SW</string>
+    <string name="wdir_wsw">WSW</string>
+    <string name="wdir_w">W</string>
+    <string name="wdir_wnw">WNW</string>
+    <string name="wdir_nw">NW</string>
+    <string name="wdir_nnw">NNW</string>
+    <!--
     <string name="wdir_n">Richtung Nord</string>
     <string name="wdir_nne">Richtung Nord-Nordost</string>
     <string name="wdir_ne">Richtung Nordost</string>
@@ -45,8 +62,10 @@
     <string name="wdir_wnw">Richtung West-Nordwest</string>
     <string name="wdir_nw">Richtung Nordwest</string>
     <string name="wdir_nnw">Richtung Nord-Nordwest</string>
+    -->
     <string name="forecast_title">"+++ SnowCast-Liveticker%1$s +++\n"</string>
     <string name="last_update">" (%1$s Uhr)"</string>
     <string name="no_data_available">Keine Wetterdaten über zu erwartenden Schneefall verfügbar.</string>
+    <string name="no_snow_expected">kein nennenswerter Schneefall</string>
     <string name="tap_to_update">"\nZum Abrufen aktueller Wetterdaten bitte antippen!"</string>
 </resources>
