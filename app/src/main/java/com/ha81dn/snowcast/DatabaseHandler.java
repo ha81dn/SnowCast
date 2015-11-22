@@ -85,7 +85,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     public static SpannableStringBuilder retrieve(SQLiteDatabase db, SharedPreferences sharedPref, Context context) {
         Cursor c;
         SpannableStringBuilder list = new SpannableStringBuilder();
-        boolean loopFlag, noSnow;
+        boolean loopFlag, noSnow, frost;
         int start;
         String location, day, tmp;
         char[] chars;
@@ -105,9 +105,10 @@ public class DatabaseHandler extends SQLiteOpenHelper {
                         noSnow = true;
                         day = "";
                         do {
+                            frost = c.getString(4).startsWith("-");
                             try {
-                                start = Math.round(Float.parseFloat(c.getString(3).replace("mm", "").replace(",", ".")));
-                                chars = new char[start <= 0 ? 0 : start - 1];
+                                start = Math.round(Float.parseFloat(c.getString(3).replace("mm", "").replace(",", ".")) - 0.5f);
+                                chars = new char[start <= 0 ? 0 : start - (frost ? 0 : 1)];
                                 Arrays.fill(chars, '❄');
                             } catch (Exception ignore) {
                                 chars = new char[0];
@@ -128,7 +129,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
                                 start = list.length();
                                 list.append(getZeroSpacedText(new String(chars)));
                                 list.setSpan(new ForegroundColorSpan(0xFFFFFFA0), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                if (c.getString(4).startsWith("-"))
+                                if (frost)
                                     list.setSpan(new UnderlineSpan(), start, list.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                 list.append(getZeroSpacedText(" "));
                                 list.append(getZeroSpacedText(c.getString(5)));
