@@ -106,7 +106,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
                         day = "";
                         do {
                             try {
-                                start = Math.round(Float.parseFloat(c.getString(3).replace("mm", "").replace(",", ".")) - 0.5f);
+                                start = Math.round(Float.parseFloat(c.getString(3).replace("mm", "").replace(",", ".")));
                                 chars = new char[start <= 0 ? 0 : start - 1];
                                 Arrays.fill(chars, '❄');
                             } catch (Exception ignore) {
