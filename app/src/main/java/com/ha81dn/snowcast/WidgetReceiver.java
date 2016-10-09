@@ -25,11 +25,12 @@ import android.widget.RemoteViews;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
+
+import javax.net.ssl.HttpsURLConnection;
 
 public class WidgetReceiver extends AppWidgetProvider {
     private static boolean recentlyClicked = false;
@@ -280,7 +281,7 @@ public class WidgetReceiver extends AppWidgetProvider {
 
                 try {
                     URL url = new URL(urls[0].replace("#idx", location));
-                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                    HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
                     connection.setRequestMethod("GET");
                     connection.setDoInput(true);
                     connection.setConnectTimeout(60000);
