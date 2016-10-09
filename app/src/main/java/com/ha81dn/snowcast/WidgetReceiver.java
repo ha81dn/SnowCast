@@ -113,7 +113,7 @@ public class WidgetReceiver extends AppWidgetProvider {
             }
         } catch (Exception ignore) {
         }
-        currentTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "http://kachelmannwetter.com/de/vorhersage/#idx/lighttrend");
+        currentTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "https://kachelmannwetter.com/de/vorhersage/#idx/lighttrend");
     }
 
     private static void prepareWidget(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
@@ -261,9 +261,9 @@ public class WidgetReceiver extends AppWidgetProvider {
     }
 
     private static class HttpAsyncTask extends AsyncTask<String, Void, Void> {
-        public AppWidgetManager appWidgetManager;
-        public Context context;
-        public String index = "";
+        AppWidgetManager appWidgetManager;
+        Context context;
+        String index = "";
         boolean flag = false;
 
         @Override
@@ -419,7 +419,7 @@ public class WidgetReceiver extends AppWidgetProvider {
                     }
                 } catch (Exception ignore) {
                 }
-                currentTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "http://kachelmannwetter.com/de/vorhersage/#idx/lighttrend");
+                currentTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "https://kachelmannwetter.com/de/vorhersage/#idx/lighttrend");
             }
         }
     }
