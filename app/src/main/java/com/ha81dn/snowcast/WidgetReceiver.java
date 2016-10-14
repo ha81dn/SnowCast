@@ -104,12 +104,13 @@ public class WidgetReceiver extends AppWidgetProvider {
                 context.getString(R.string.dots04), context.getString(R.string.dots05), context.getString(R.string.dots06),
                 context.getString(R.string.dots07), context.getString(R.string.dots08), context.getString(R.string.dots09),
                 context.getString(R.string.dots10), context.getString(R.string.dots11), context.getString(R.string.dots12)};
+        ((HttpAsyncTask) currentTask).lastTime = System.currentTimeMillis();
         ((HttpAsyncTask) currentTask).appWidgetManager = appWidgetManager;
         ((HttpAsyncTask) currentTask).index = "idx1";
         try {
             RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
             applyOnClick(context, remoteViews);
-            remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch, ""));
+            remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch, context.getString(R.string.dots01)));
 
             ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
             int[] allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
@@ -271,6 +272,7 @@ public class WidgetReceiver extends AppWidgetProvider {
         String index = "";
         String dots[];
         int idx = 0, idxFrom = 0, idxTo = 11;
+        long lastTime;
 
         @Override
         protected Void doInBackground(String... urls) {
@@ -301,7 +303,7 @@ public class WidgetReceiver extends AppWidgetProvider {
                         if (isCancelled()) break;
                         i++;
                         chaine.append(line);
-                        if (i % 500 == 0) publishProgress();
+                        if (i % 100 == 0) publishProgress();
                     }
                 } catch (Exception ignore) {
                 }
@@ -373,19 +375,23 @@ public class WidgetReceiver extends AppWidgetProvider {
         @Override
         protected void onProgressUpdate(Void... voids) {
             try {
-                RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-                applyOnClick(context, remoteViews);
-                remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch, dots[idx]));
-                if (idx < idxTo) {
-                    idx++;
-                } else {
-                    idx = idxFrom;
-                }
+                long now = System.currentTimeMillis();
+                if (now - lastTime >= 250) {
+                    lastTime = now;
+                    RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+                    applyOnClick(context, remoteViews);
+                    remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch, dots[idx]));
+                    if (idx < idxTo) {
+                        idx++;
+                    } else {
+                        idx = idxFrom;
+                    }
 
-                ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
-                int[] allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
-                for (int widgetId : allWidgetIds) {
-                    appWidgetManager.updateAppWidget(widgetId, remoteViews);
+                    ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
+                    int[] allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
+                    for (int widgetId : allWidgetIds) {
+                        appWidgetManager.updateAppWidget(widgetId, remoteViews);
+                    }
                 }
             } catch (Exception ignore) {
             }
@@ -414,6 +420,7 @@ public class WidgetReceiver extends AppWidgetProvider {
                         context.getString(R.string.dots04), context.getString(R.string.dots05), context.getString(R.string.dots06),
                         context.getString(R.string.dots07), context.getString(R.string.dots08), context.getString(R.string.dots09),
                         context.getString(R.string.dots10), context.getString(R.string.dots11), context.getString(R.string.dots12)};
+                ((HttpAsyncTask) currentTask).lastTime = System.currentTimeMillis();
                 ((HttpAsyncTask) currentTask).appWidgetManager = appWidgetManager;
                 ((HttpAsyncTask) currentTask).index = "idx" + Integer.toString(Integer.parseInt(index.substring(3, 4)) + 1);
                 try {
