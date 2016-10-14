@@ -265,8 +265,10 @@ public class WidgetReceiver extends AppWidgetProvider {
         AppWidgetManager appWidgetManager;
         Context context;
         String index = "";
-        String dots[] = {"&#8200;&#8200;&#8200;", "&#46;&#8200;&#8200;", "&#46;&#46;&#8200;", "&#46;&#46;&#46;", "&#8200;&#46;&#46;", "&#8200;&#8200;&#46;", "&#8200;&#8200;&#8200;",
-                "&#8200;&#8200;&#46;", "&#8200;&#46;&#46;", "&#46;&#46;&#46;", "&#46;&#46;&#8200;", "&#46;&#8200;&#8200;"};
+        String dots[] = {context.getString(R.string.dots01), context.getString(R.string.dots02), context.getString(R.string.dots03),
+                context.getString(R.string.dots04), context.getString(R.string.dots05), context.getString(R.string.dots06),
+                context.getString(R.string.dots07), context.getString(R.string.dots08), context.getString(R.string.dots09),
+                context.getString(R.string.dots10), context.getString(R.string.dots11), context.getString(R.string.dots12)};
         int idx = 0, idxFrom = 0, idxTo = 11;
 
         @Override
