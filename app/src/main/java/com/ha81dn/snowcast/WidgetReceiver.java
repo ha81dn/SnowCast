@@ -377,7 +377,7 @@ public class WidgetReceiver extends AppWidgetProvider {
             try {
                 long now = System.currentTimeMillis();
                 int idxFrom = 0, idxTo = 11;
-                if (now - lastTime >= 250) {
+                if (now - lastTime >= 100) {
                     lastTime = now;
                     RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
                     applyOnClick(context, remoteViews);
