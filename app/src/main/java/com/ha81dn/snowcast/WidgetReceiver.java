@@ -111,7 +111,7 @@ public class WidgetReceiver extends AppWidgetProvider {
         try {
             RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
             applyOnClick(context, remoteViews);
-            remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch, context.getString(R.string.dots01)));
+            remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch, ((HttpAsyncTask) currentTask).dots[idx]));
 
             ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
             int[] allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
