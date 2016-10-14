@@ -105,7 +105,7 @@ public class WidgetReceiver extends AppWidgetProvider {
         try {
             RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
             applyOnClick(context, remoteViews);
-            remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_1));
+            remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch, ""));
 
             ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
             int[] allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
@@ -265,7 +265,9 @@ public class WidgetReceiver extends AppWidgetProvider {
         AppWidgetManager appWidgetManager;
         Context context;
         String index = "";
-        boolean flag = false;
+        String dots[] = {"&#8200;&#8200;&#8200;", "&#46;&#8200;&#8200;", "&#46;&#46;&#8200;", "&#46;&#46;&#46;", "&#8200;&#46;&#46;", "&#8200;&#8200;&#46;", "&#8200;&#8200;&#8200;",
+                "&#8200;&#8200;&#46;", "&#8200;&#46;&#46;", "&#46;&#46;&#46;", "&#46;&#46;&#8200;", "&#46;&#8200;&#8200;"};
+        int idx = 0, idxFrom = 0, idxTo = 11;
 
         @Override
         protected Void doInBackground(String... urls) {
@@ -370,12 +372,11 @@ public class WidgetReceiver extends AppWidgetProvider {
             try {
                 RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
                 applyOnClick(context, remoteViews);
-                if (flag) {
-                    remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_1));
-                    flag = false;
+                remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch, dots[idx]));
+                if (idx < idxTo) {
+                    idx++;
                 } else {
-                    remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_0));
-                    flag = true;
+                    idx = idxFrom;
                 }
 
                 ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
@@ -411,7 +412,7 @@ public class WidgetReceiver extends AppWidgetProvider {
                 try {
                     RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
                     applyOnClick(context, remoteViews);
-                    remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch_1));
+                    remoteViews.setTextViewText(R.id.update, context.getString(R.string.data_fetch, dots[idx]));
 
                     ComponentName thisWidget = new ComponentName(context, WidgetReceiver.class);
                     int[] allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
