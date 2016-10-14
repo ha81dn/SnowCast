@@ -47,6 +47,7 @@ public class WidgetReceiver extends AppWidgetProvider {
     private static Handler monitoringHandler = new Handler();
     private static Runnable monitoringRunnable;
     private static AsyncTask<String, Void, Void> currentTask;
+    private static int idx = 0;
 
     private static Runnable createMonitoring(final Context context) {
         return new Runnable() {
@@ -271,7 +272,6 @@ public class WidgetReceiver extends AppWidgetProvider {
         Context context;
         String index = "";
         String dots[];
-        int idx = 0, idxFrom = 0, idxTo = 11;
         long lastTime;
 
         @Override
@@ -376,6 +376,7 @@ public class WidgetReceiver extends AppWidgetProvider {
         protected void onProgressUpdate(Void... voids) {
             try {
                 long now = System.currentTimeMillis();
+                int idxFrom = 0, idxTo = 11;
                 if (now - lastTime >= 250) {
                     lastTime = now;
                     RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
