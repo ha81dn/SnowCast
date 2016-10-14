@@ -301,7 +301,7 @@ public class WidgetReceiver extends AppWidgetProvider {
                         if (isCancelled()) break;
                         i++;
                         chaine.append(line);
-                        if (i % 100 == 0) publishProgress();
+                        if (i % 500 == 0) publishProgress();
                     }
                 } catch (Exception ignore) {
                 }
