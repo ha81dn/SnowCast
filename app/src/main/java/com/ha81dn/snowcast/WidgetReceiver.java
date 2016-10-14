@@ -100,6 +100,10 @@ public class WidgetReceiver extends AppWidgetProvider {
 
         currentTask = new HttpAsyncTask();
         ((HttpAsyncTask) currentTask).context = context;
+        ((HttpAsyncTask) currentTask).dots = new String[]{context.getString(R.string.dots01), context.getString(R.string.dots02), context.getString(R.string.dots03),
+                context.getString(R.string.dots04), context.getString(R.string.dots05), context.getString(R.string.dots06),
+                context.getString(R.string.dots07), context.getString(R.string.dots08), context.getString(R.string.dots09),
+                context.getString(R.string.dots10), context.getString(R.string.dots11), context.getString(R.string.dots12)};
         ((HttpAsyncTask) currentTask).appWidgetManager = appWidgetManager;
         ((HttpAsyncTask) currentTask).index = "idx1";
         try {
@@ -265,10 +269,7 @@ public class WidgetReceiver extends AppWidgetProvider {
         AppWidgetManager appWidgetManager;
         Context context;
         String index = "";
-        String dots[] = {context.getString(R.string.dots01), context.getString(R.string.dots02), context.getString(R.string.dots03),
-                context.getString(R.string.dots04), context.getString(R.string.dots05), context.getString(R.string.dots06),
-                context.getString(R.string.dots07), context.getString(R.string.dots08), context.getString(R.string.dots09),
-                context.getString(R.string.dots10), context.getString(R.string.dots11), context.getString(R.string.dots12)};
+        String dots[];
         int idx = 0, idxFrom = 0, idxTo = 11;
 
         @Override
@@ -409,6 +410,10 @@ public class WidgetReceiver extends AppWidgetProvider {
             } else {
                 currentTask = new HttpAsyncTask();
                 ((HttpAsyncTask) currentTask).context = context;
+                ((HttpAsyncTask) currentTask).dots = new String[]{context.getString(R.string.dots01), context.getString(R.string.dots02), context.getString(R.string.dots03),
+                        context.getString(R.string.dots04), context.getString(R.string.dots05), context.getString(R.string.dots06),
+                        context.getString(R.string.dots07), context.getString(R.string.dots08), context.getString(R.string.dots09),
+                        context.getString(R.string.dots10), context.getString(R.string.dots11), context.getString(R.string.dots12)};
                 ((HttpAsyncTask) currentTask).appWidgetManager = appWidgetManager;
                 ((HttpAsyncTask) currentTask).index = "idx" + Integer.toString(Integer.parseInt(index.substring(3, 4)) + 1);
                 try {
