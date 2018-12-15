@@ -15,6 +15,7 @@
         android:layout_margin="4dip"
         android:gravity="center_horizontal"
         android:text="@string/tap_to_update"
+        android:textColor="#DDD"
         android:textSize="12sp"
         android:typeface="monospace" />
 

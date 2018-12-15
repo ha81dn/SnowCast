@@ -120,7 +120,7 @@ public class WidgetReceiver extends AppWidgetProvider {
             }
         } catch (Exception ignore) {
         }
-        currentTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "https://kachelmannwetter.com/de/vorhersage/#idx/lighttrend");
+        currentTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "https://kachelmannwetter.com/de/vorhersage/#idx/xl");
     }
 
     private static void prepareWidget(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
@@ -278,7 +278,7 @@ public class WidgetReceiver extends AppWidgetProvider {
         protected Void doInBackground(String... urls) {
             try {
                 SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
-                StringBuilder chaine = new StringBuilder("");
+                StringBuilder chaine = new StringBuilder();
                 String location = sharedPref.getString(index, "").trim();
                 SimpleDateFormat sdf;
                 Calendar now;
@@ -299,6 +299,38 @@ public class WidgetReceiver extends AppWidgetProvider {
                     BufferedReader rd = new BufferedReader(new InputStreamReader(inputStream));
                     String line;
                     int i = 0;
+                    int readlen = 0;
+                    while ((line = rd.readLine()) != null && readlen <= 999) {
+                        if (isCancelled()) break;
+                        i++;
+                        chaine.append(line);
+                        if (line != null) readlen += line.length();
+                        if (i % 100 == 0) publishProgress();
+                    }
+                } catch (Exception ignore) {
+                }
+
+                String result = chaine.toString(), time, day, sky, city = "", temp, precip, windname, winddir, wMid, wMax;
+                int snowPos, pos, len;
+
+                if (!result.equals(""))
+                    city = getInnerText(result, 0, "Vorhersage XL für ", " |", false);
+                chaine = new StringBuilder();
+
+                // https://kachelmannwetter.com/de/ajax/fcxl?city_id=2860684&lang=de&units=de&tf=1&model=&func=xl
+                try {
+                    URL url = new URL("https://kachelmannwetter.com/de/ajax/fcxl?city_id=#locnr&lang=de&units=de&tf=1&model=&func=xl".replace("#locnr", location.split("-")[0]));
+                    HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+                    connection.setRequestMethod("GET");
+                    connection.setDoInput(true);
+                    connection.setConnectTimeout(60000);
+                    connection.connect();
+
+                    InputStream inputStream = connection.getInputStream();
+
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(inputStream));
+                    String line;
+                    int i = 0;
                     while ((line = rd.readLine()) != null) {
                         if (isCancelled()) break;
                         i++;
@@ -308,14 +340,12 @@ public class WidgetReceiver extends AppWidgetProvider {
                 } catch (Exception ignore) {
                 }
 
-                String result = chaine.toString(), time, day, sky, city = "", temp, precip, windname, winddir, wMid, wMax;
-                int snowPos, pos, len = result.length();
+                result = chaine.toString();
+                len = result.length();
 
                 if (!result.equals("")) {
                     SQLiteDatabase db = DatabaseHandler.getInstance(context).getWritableDatabase();
                     snowPos = result.indexOf("chnee");
-                    if (snowPos >= 0)
-                        city = getInnerText(result, 0, "<title>Wettervorhersage Light für ", " |", false);
                     while (snowPos >= 0) {
                         try {
                             do {
@@ -436,7 +466,7 @@ public class WidgetReceiver extends AppWidgetProvider {
                     }
                 } catch (Exception ignore) {
                 }
-                currentTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "https://kachelmannwetter.com/de/vorhersage/#idx/lighttrend");
+                currentTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "https://kachelmannwetter.com/de/vorhersage/#idx/xl");
             }
         }
     }

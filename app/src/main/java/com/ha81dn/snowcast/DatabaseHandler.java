@@ -93,7 +93,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         for (int i = 1; i <= 5; i++) {
             location = sharedPref.getString("idx" + i, "");
             if (!location.equals("")) {
-                c = db.rawQuery("select city, day, ltrim(substr(time, 7, 2), '0')+0, precip, temp, winddir from forecast where location = ? order by time", new String[]{location});
+                c = db.rawQuery("select city, day, ltrim(substr(time, 7, 2), '0')+0, precip, [temp], winddir from forecast where location = ? order by time", new String[]{location});
                 if (c != null) {
                     if (c.moveToFirst()) {
                         if (list.length() != 0) list.append("\n");
@@ -202,7 +202,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL("create table if not exists forecast (location text, time integer, city text, day text, sky text, temp text, precip text, windname text, winddir text, stamp integer, primary key (location, time))");
+        db.execSQL("create table if not exists forecast (location text, time integer, city text, day text, sky text, [temp] text, precip text, windname text, winddir text, stamp integer, primary key (location, time))");
     }
 
     @Override
